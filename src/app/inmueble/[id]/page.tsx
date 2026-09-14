@@ -91,7 +91,12 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
   const isVerified = owner.is_verified || false;
   const isCompany = owner.account_type === 'empresa';
   const advertiserName = isCompany && owner.company_name ? owner.company_name : (owner.full_name || 'Dueño Directo');
-  const whatsappLink = `https://wa.me/549${owner.phone}?text=Hola!%20Vi%20tu%20${property.property_type}%20en%20AlquilaLP%20y%20me%20interesa.`;
+  
+  // Tomamos el teléfono estrictamente de la base de datos del propietario
+  const ownerPhone = owner?.phone ? owner.phone.replace(/\D/g, '') : '';
+  const whatsappLink = ownerPhone 
+    ? `https://wa.me/${ownerPhone.startsWith('54') ? ownerPhone : `54${ownerPhone}`}?text=Hola!%20Vi%20tu%20${property.property_type}%20en%20AlquilaLP%20y%20me%20interesa.` 
+    : '';
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -214,14 +219,20 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
                   </div>
                 </div>
 
-                <a 
-                  href={whatsappLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 md:py-4 rounded-2xl shadow-lg shadow-emerald-500/30 transition-all text-base md:text-lg"
-                >
-                  Contactar al anunciante
-                </a>
+                {whatsappLink ? (
+                  <a 
+                    href={whatsappLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 md:py-4 rounded-2xl shadow-lg shadow-emerald-500/30 transition-all text-base md:text-lg"
+                  >
+                    Contactar al anunciante
+                  </a>
+                ) : (
+                  <div className="w-full text-center bg-slate-100 text-slate-400 py-3.5 rounded-2xl text-sm font-medium">
+                    Teléfono no disponible
+                  </div>
+                )}
                 <p className="text-center text-xs md:text-sm text-slate-500 mt-4 font-medium">Trato directo y transparente.</p>
               </div>
             </div>
