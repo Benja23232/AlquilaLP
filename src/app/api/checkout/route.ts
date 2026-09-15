@@ -1,53 +1,45 @@
 import { NextResponse } from 'next/server';
+import { MercadoPagoConfig, Preference } from 'mercadopago';
+
+// Inicializamos Mercado Pago con el nombre exacto de tu variable
+const client = new MercadoPagoConfig({ 
+  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN as string 
+});
 
 export async function POST(request: Request) {
   try {
-    const { propertyId, title, price } = await request.json();
+    const body = await request.json();
+    // Recibimos el ID y el título de la propiedad a destacar
+    const { propertyId, title } = body;
 
-    const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    if (!MERCADOPAGO_ACCESS_TOKEN) {
-      throw new Error('Falta configurar el MERCADOPAGO_ACCESS_TOKEN en el archivo .env.local');
-    }
-
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-
-    const preferenceData = {
-      items: [
-        {
-          title: `Destacar anuncio: ${title}`,
-          quantity: 1,
-          currency_id: 'ARS',
-          unit_price: Number(price) || 2500, // Precio del destaque en ARS
+    const preference = new Preference(client);
+    
+    // Creamos la preferencia (el link de pago)
+    const response = await preference.create({
+      body: {
+        items: [
+          {
+            id: propertyId,
+            title: `Destacar Propiedad: ${title}`,
+            quantity: 1,
+            unit_price: 5000, // Precio fijo en $5.000 ARS
+            currency_id: 'ARS',
+          },
+        ],
+        back_urls: {
+          success: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?status=success`,
+          failure: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?status=failure`,
+          pending: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?status=pending`,
         },
-      ],
-      back_urls: {
-        success: `${siteUrl}/dashboard?success=true&propertyId=${propertyId}`,
-        failure: `${siteUrl}/dashboard?error=true`,
-        pending: `${siteUrl}/dashboard?pending=true`,
+        auto_return: 'approved',
+        external_reference: propertyId, // Guardamos el ID para saber qué propiedad destacar después
       },
-      // Quitamos auto_return para evitar restricciones con localhost en desarrollo
-      external_reference: propertyId,
-    };
-
-    const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${MERCADOPAGO_ACCESS_TOKEN}`,
-      },
-      body: JSON.stringify(preferenceData),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || JSON.stringify(data) || 'Error al conectar con Mercado Pago');
-    }
-
-    // Devolvemos el link de pago oficial de Mercado Pago
-    return NextResponse.json({ init_point: data.init_point });
-  } catch (error: any) {
-    console.error('Error en checkout:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Devolvemos el link que nos dio Mercado Pago
+    return NextResponse.json({ init_point: response.init_point });
+  } catch (error) {
+    console.error('Error al crear preferencia de Mercado Pago:', error);
+    return NextResponse.json({ error: 'Error al crear el link de pago' }, { status: 500 });
   }
 }

@@ -21,7 +21,6 @@ function DashboardCard({ prop, onDelete }: { prop: any; onDelete: (id: string) =
         body: JSON.stringify({
           propertyId: prop.id,
           title: prop.title,
-          price: 2500, // Precio del destaque en ARS
         }),
       });
 
@@ -62,14 +61,14 @@ function DashboardCard({ prop, onDelete }: { prop: any; onDelete: (id: string) =
         <h3 className="font-bold text-lg text-slate-900 line-clamp-1 mb-1">{prop.title}</h3>
         <p className="text-blue-600 font-bold mb-3 text-xl">${prop.price.toLocaleString('es-AR')}</p>
         
-        {/* Botón de Destacar */}
+        {/* Botón de Destacar actualizado */}
         {!prop.is_featured && (
           <button 
             onClick={handleFeatureProperty}
             disabled={paying}
             className="w-full mb-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            {paying ? 'Redirigiendo a MP...' : '⭐ Destacar anuncio ($2.500)'}
+            {paying ? 'Redirigiendo a MP...' : '⭐ Destacar anuncio ($5.000)'}
           </button>
         )}
 
@@ -103,21 +102,23 @@ export default function DashboardPage() {
   // 1. Detectar retorno exitoso de Mercado Pago y activar destaque
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    const success = queryParams.get('success');
-    const propertyId = queryParams.get('propertyId');
+    const status = queryParams.get('status'); // MP devuelve 'approved'
+    const externalReference = queryParams.get('external_reference'); // MP devuelve acá el propertyId
 
     const activateFeatured = async () => {
-      if (success === 'true' && propertyId) {
+      if ((status === 'approved' || status === 'success') && externalReference) {
         try {
           const { error } = await supabase
             .from('properties')
             .update({ is_featured: true })
-            .eq('id', propertyId);
+            .eq('id', externalReference);
 
           if (error) throw error;
           alert('¡Pago exitoso! Tu propiedad ya se encuentra destacada en el portal.');
-          window.history.replaceState({}, document.title, window.location.pathname); // Limpia la URL
-          window.location.reload(); // Recarga para actualizar el estado visual
+          
+          // Limpia la URL para que si recarga la página no vuelva a ejecutar esto
+          window.history.replaceState({}, document.title, window.location.pathname);
+          window.location.reload(); 
         } catch (err: any) {
           console.error('Error al activar destaque:', err);
         }
