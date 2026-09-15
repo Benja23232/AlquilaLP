@@ -202,13 +202,9 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
                       {advertiserName.charAt(0)}
                     </div>
                     <div>
-                      {isCompany ? (
-                        <Link href={`/perfil/${owner.id}`} className="font-bold text-slate-900 text-base md:text-lg hover:text-blue-600 transition-colors underline decoration-slate-300 underline-offset-4">
-                          {advertiserName} ↗
-                        </Link>
-                      ) : (
-                        <p className="font-bold text-slate-900 text-base md:text-lg">{advertiserName}</p>
-                      )}
+                      <Link href={`/perfil/${owner.id}`} className="font-bold text-slate-900 text-base md:text-lg hover:text-blue-600 transition-colors underline decoration-slate-300 underline-offset-4">
+                        {advertiserName} ↗
+                      </Link>
 
                       {isVerified ? (
                         <span className="text-xs md:text-sm font-bold text-blue-600 flex items-center gap-1.5 mt-1">✅ Identidad Verificada</span>
