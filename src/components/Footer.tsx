@@ -9,7 +9,7 @@ export default function Footer() {
             AlquilaLP<span className="text-blue-500">.</span>
           </Link>
           <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
-            La plataforma líder de alquiler directo entre dueños e inquilinos en La Plata. Cero comisiones, trato transparente y seguro.
+            El nuevo punto de encuentro para alquilar en La Plata. Facilitamos el contacto directo, de manera rápida, transparente y sin vueltas.
           </p>
         </div>
         <div>
