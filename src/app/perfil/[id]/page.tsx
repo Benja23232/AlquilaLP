@@ -51,7 +51,10 @@ export default async function CompanyProfilePage({ params }: { params: Promise<{
 
   const companyName = profile.company_name || profile.full_name || 'Inmobiliaria Directa';
   const isVerified = profile.is_verified || false;
-  const whatsappLink = profile.phone ? `https://wa.me/549${profile.phone}?text=Hola!%20Vi%20sus%20propiedades%20en%20AlquilaLP%20y%20me%20interesa%20consultar.` : '#';
+  
+  // Limpiamos el número por si el usuario lo guardó con espacios o guiones
+  const cleanPhone = profile.phone ? profile.phone.replace(/[^0-9]/g, '') : '';
+  const whatsappLink = cleanPhone ? `https://wa.me/549${cleanPhone}?text=Hola!%20Vi%20sus%20propiedades%20en%20AlquilaLP%20y%20me%20interesa%20consultar.` : '#';
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans tracking-tight flex flex-col justify-between">
@@ -69,10 +72,11 @@ export default async function CompanyProfilePage({ params }: { params: Promise<{
 
         {/* HERO INSTITUCIONAL DE LA EMPRESA */}
         <section className="bg-slate-900 bg-gradient-to-b from-slate-900 to-slate-800 text-white pb-20 md:pb-24 pt-12 md:pt-16 px-4 md:px-6">
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
-            <div className="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-4xl md:text-5xl shadow-xl shadow-blue-500/20 border-2 border-white/20 shrink-0">
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-10 text-center md:text-left">
+            <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-4xl md:text-5xl shadow-xl shadow-blue-500/20 border-2 border-white/20 shrink-0">
               {companyName.charAt(0)}
             </div>
+            
             <div className="flex-1">
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3 mb-2">
                 <span className="bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[11px] md:text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
@@ -88,16 +92,36 @@ export default async function CompanyProfilePage({ params }: { params: Promise<{
               <p className="text-slate-300 max-w-2xl text-sm md:text-base leading-relaxed mb-6 font-light">
                 {profile.company_bio || 'Empresa dedicada al corretaje inmobiliario y alquiler directo de propiedades en la región.'}
               </p>
-              {profile.phone && (
-                <a 
-                  href={whatsappLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-emerald-500/30 transition-all text-sm"
-                >
-                  💬 Contactar por WhatsApp
-                </a>
-              )}
+              
+              {/* BLOQUE DE CONTACTO (Maneja nulos y válidos) */}
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
+                {profile.phone ? (
+                  <>
+                    <a 
+                      href={whatsappLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-emerald-500/30 transition-all text-sm w-full sm:w-auto justify-center"
+                    >
+                      💬 Contactar por WhatsApp
+                    </a>
+                    
+                    <div className="flex items-center gap-2 bg-slate-800/50 border border-slate-700/50 px-5 py-2.5 rounded-xl">
+                      <span className="text-slate-400 text-sm">📞 Llamar:</span>
+                      <a 
+                        href={`tel:${cleanPhone}`} 
+                        className="text-white font-semibold hover:text-blue-400 transition-colors"
+                      >
+                        {profile.phone}
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <div className="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-slate-400 font-bold px-6 py-3 rounded-xl text-sm w-full sm:w-auto justify-center cursor-not-allowed">
+                    📵 Teléfono no publicado
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
