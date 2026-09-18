@@ -11,6 +11,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false); // Alternar entre Iniciar Sesión y Registrarse
   
+  // NUEVO: Estado para manejar mensajes de error visuales
+  const [errorMsg, setErrorMsg] = useState(""); 
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,6 +28,24 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(""); // Limpiamos errores previos al intentar de nuevo
+
+    // --- 1. VALIDACIÓN EN EL FRONTEND ---
+    // Chequeo general de email y password (aplica a ambos)
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setErrorMsg("El correo electrónico y la contraseña son obligatorios.");
+      return; // Frenamos la ejecución acá
+    }
+
+    // Chequeo específico si se está registrando
+    if (isSignUp) {
+      if (!formData.fullName.trim() || !formData.phone.trim()) {
+        setErrorMsg("Por favor, completá tu nombre y teléfono para poder registrarte.");
+        return; // Frenamos la ejecución acá
+      }
+    }
+    // -----------------------------------
+
     setLoading(true);
 
     try {
@@ -56,6 +77,8 @@ export default function LoginPage() {
 
         alert("¡Cuenta creada con éxito! Ya podés iniciar sesión o comenzar a publicar.");
         setIsSignUp(false); // Cambiamos a la vista de login
+        // Limpiamos la contraseña por seguridad
+        setFormData(prev => ({ ...prev, password: '' })); 
       } else {
         // Inicio de sesión
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -69,7 +92,8 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       console.error(error);
-      alert("Ocurrió un error: " + (error.message || error));
+      // Reemplazamos el alert por nuestro mensaje de error en la UI
+      setErrorMsg(error.message || "Ocurrió un error inesperado.");
     } finally {
       setLoading(false);
     }
@@ -78,7 +102,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-slate-50 font-sans tracking-tight flex flex-col justify-between text-slate-900">
       <div>
-        {/* MINI HERO OSCURO (Mantiene la misma línea visual que Publicar e Inmuebles) */}
+        {/* MINI HERO OSCURO */}
         <div className="bg-slate-900 bg-gradient-to-b from-slate-900 to-slate-800 pb-28 md:pb-32">
           <header className="px-4 md:px-6 py-4 md:py-6 max-w-5xl mx-auto flex justify-between items-center">
             <Link href="/" className="text-xl md:text-2xl font-extrabold text-white tracking-tighter drop-shadow-md hover:opacity-80 transition-all">
@@ -103,22 +127,35 @@ export default function LoginPage() {
         <div className="max-w-md mx-auto px-4 -mt-8 md:-mt-12 relative z-10 mb-20">
           <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 md:p-10 rounded-2xl md:rounded-[2rem] shadow-2xl border border-slate-100 space-y-6">
             
-            <div className="flex bg-slate-100 p-1 rounded-2xl mb-6">
+            <div className="flex bg-slate-100 p-1 rounded-2xl mb-2">
               <button
                 type="button"
-                onClick={() => setIsSignUp(false)}
+                onClick={() => {
+                  setIsSignUp(false);
+                  setErrorMsg(""); // Limpiar errores al cambiar de pestaña
+                }}
                 className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${!isSignUp ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 Iniciar Sesión
               </button>
               <button
                 type="button"
-                onClick={() => setIsSignUp(true)}
+                onClick={() => {
+                  setIsSignUp(true);
+                  setErrorMsg(""); // Limpiar errores al cambiar de pestaña
+                }}
                 className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${isSignUp ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 Registrarse
               </button>
             </div>
+
+            {/* CARTEL DE ERROR VISUAL */}
+            {errorMsg && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium animate-pulse">
+                {errorMsg}
+              </div>
+            )}
 
             {isSignUp && (
               <>
@@ -186,7 +223,10 @@ export default function LoginPage() {
             <div className="text-center pt-2">
               <button 
                 type="button" 
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setErrorMsg(""); // Limpiar errores al cambiar
+                }}
                 className="text-xs sm:text-sm font-semibold text-blue-600 hover:underline"
               >
                 {isSignUp ? '¿Ya tenés cuenta? Iniciá sesión' : '¿No tenés cuenta? Registrate gratis'}
