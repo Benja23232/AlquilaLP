@@ -6,10 +6,10 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         <div className="md:col-span-2">
           <Link href="/" className="text-2xl font-extrabold text-white tracking-tighter inline-block mb-4">
-            AlquilaLP<span className="text-blue-500">.</span>
+            Directos<span className="text-blue-500">.</span>
           </Link>
           <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
-            El nuevo punto de encuentro para alquilar en La Plata. Facilitamos el contacto directo, de manera rápida, transparente y sin vueltas.
+            La plataforma líder de alquiler directo entre dueños e inquilinos en La Plata. Cero comisiones, trato transparente y seguro.
           </p>
         </div>
         <div>
@@ -29,8 +29,23 @@ export default function Footer() {
           </ul>
         </div>
       </div>
-      <div className="max-w-6xl mx-auto pt-8 border-t border-slate-900/80 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} Directos. Todos los derechos reservados. Desarrollado sin intermediarios.
+      
+      {/* BARRA INFERIOR MODIFICADA */}
+      <div className="max-w-6xl mx-auto pt-8 border-t border-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <p>
+          © {new Date().getFullYear()} Directos. Todos los derechos reservados.
+        </p>
+        <p>
+          Diseño y desarrollo por{' '}
+          <a 
+            href="https://www.instagram.com/code.byben/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-400 font-bold transition-colors"
+          >
+            @code.byben
+          </a>
+        </p>
       </div>
     </footer>
   );
