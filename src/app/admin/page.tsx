@@ -2,45 +2,44 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 
 export default function AdminPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingProfiles, setPendingProfiles] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  
-  // Estado para el modal de previsualización del documento
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAdminAndFetch = async () => {
+    const checkAuthAndFetch = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        
+        // 1. Si no está logueado, lo pateamos al login pasándole la ruta. 
+        // Usamos window.location para forzar la URL y evitar que Next.js cachee errores.
         if (!session) {
-          router.push('/login');
+          window.location.href = '/login?redirectTo=/admin';
           return;
         }
 
-        // Verificar si el usuario actual es administrador
-        const { data: profile, error: profileError } = await supabase
+        // 2. Verificamos si tiene el rol de admin en la base de datos
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('*')
+          .select('is_admin')
           .eq('id', session.user.id)
           .single();
 
-        if (profileError || !profile?.is_admin) {
-          alert('Acceso no autorizado. No tenés permisos de administrador.');
-          router.push('/dashboard');
+        // 3. Si no es admin, lo mandamos al dashboard
+        if (!profile?.is_admin) {
+          window.location.href = '/dashboard';
           return;
         }
 
         setIsAdmin(true);
 
-        // Cargar perfiles pendientes de verificación
+        // 4. Si es admin, cargamos los perfiles pendientes
         const { data: pending, error: pendingError } = await supabase
           .from('profiles')
           .select('*')
@@ -49,14 +48,14 @@ export default function AdminPage() {
         if (pendingError) throw pendingError;
         setPendingProfiles(pending || []);
       } catch (err) {
-        console.error('Error al cargar panel de administración:', err);
+        console.error('Error al cargar panel:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    checkAdminAndFetch();
-  }, [router]);
+    checkAuthAndFetch();
+  }, []);
 
   const handleUpdateStatus = async (userId: string, status: 'approved' | 'rejected') => {
     setProcessingId(userId);
@@ -72,7 +71,6 @@ export default function AdminPage() {
 
       if (error) throw error;
 
-      // Actualizar estado local
       setPendingProfiles(prev => prev.filter(p => p.id !== userId));
       alert(status === 'approved' ? '¡Usuario verificado con éxito!' : 'Solicitud rechazada.');
     } catch (error: any) {
@@ -82,6 +80,7 @@ export default function AdminPage() {
     }
   };
 
+  // PANTALLA DE CARGA DE SEGURIDAD
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -90,6 +89,7 @@ export default function AdminPage() {
     );
   }
 
+  // SI NO ES ADMIN, NO RENDERIZA NADA (ya lo redirigió arriba)
   if (!isAdmin) return null;
 
   return (

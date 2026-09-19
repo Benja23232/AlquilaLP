@@ -88,10 +88,11 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Estados para configuración de Empresa / Tipo de Cuenta
+  // Estados para configuración de Empresa / Tipo de Cuenta y Teléfono
   const [accountType, setAccountType] = useState('particular');
   const [companyName, setCompanyName] = useState('');
   const [companyBio, setCompanyBio] = useState('');
+  const [phone, setPhone] = useState(''); // ESTADO NUEVO PARA EL TELÉFONO
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Estados para Modal y Solicitud de Verificación Real
@@ -102,8 +103,8 @@ export default function DashboardPage() {
   // 1. Detectar retorno exitoso de Mercado Pago y activar destaque
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    const status = queryParams.get('status'); // MP devuelve 'approved'
-    const externalReference = queryParams.get('external_reference'); // MP devuelve acá el propertyId
+    const status = queryParams.get('status'); 
+    const externalReference = queryParams.get('external_reference'); 
 
     const activateFeatured = async () => {
       if ((status === 'approved' || status === 'success') && externalReference) {
@@ -116,7 +117,6 @@ export default function DashboardPage() {
           if (error) throw error;
           alert('¡Pago exitoso! Tu propiedad ya se encuentra destacada en el portal.');
           
-          // Limpia la URL para que si recarga la página no vuelva a ejecutar esto
           window.history.replaceState({}, document.title, window.location.pathname);
           window.location.reload(); 
         } catch (err: any) {
@@ -140,6 +140,7 @@ export default function DashboardPage() {
           setAccountType(userProfile.account_type || 'particular');
           setCompanyName(userProfile.company_name || '');
           setCompanyBio(userProfile.company_bio || '');
+          setPhone(userProfile.phone || ''); // CARGAMOS EL TELÉFONO INICIAL DE LA BD
         }
 
         const { data: userProperties, error } = await supabase
@@ -173,7 +174,8 @@ export default function DashboardPage() {
         .update({ 
           account_type: accountType, 
           company_name: accountType === 'empresa' ? companyName : null,
-          company_bio: accountType === 'empresa' ? companyBio : null
+          company_bio: accountType === 'empresa' ? companyBio : null,
+          phone: phone // GUARDAMOS EL TELÉFONO NUEVO O MODIFICADO EN LA BD
         })
         .eq('id', profile.id);
 
@@ -182,9 +184,10 @@ export default function DashboardPage() {
         ...profile, 
         account_type: accountType, 
         company_name: accountType === 'empresa' ? companyName : null,
-        company_bio: accountType === 'empresa' ? companyBio : null
+        company_bio: accountType === 'empresa' ? companyBio : null,
+        phone: phone // ACTUALIZAMOS EL ESTADO VISUAL
       });
-      alert("¡Perfil institucional actualizado con éxito!");
+      alert("¡Perfil actualizado con éxito!");
     } catch (error: any) {
       alert("Error al actualizar perfil: " + error.message);
     } finally {
@@ -296,7 +299,7 @@ export default function DashboardPage() {
                   )}
 
                   {!profile?.is_verified && profile?.verification_status !== 'pending' && (
-                    <button onClick={() => setShowVerifyModal(true)} className="text-xs font-bold text-blue-600 hover:bg-blue-50 bg-blue-50/60 px-3 py-1 rounded-full border border-blue-200 transition-colors">
+                    <button onClick={() => setShowVerifyModal(true)} className="text-xs font-bold text-blue-600 hover:bg-blue-50 bg-blue-50/60 px-3 py-1 rounded-full border border-blue-200 transition-colors cursor-pointer">
                       Verificar identidad 🛡️
                     </button>
                   )}
@@ -308,12 +311,26 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {/* Configuración de Tipo de Anunciante y Bio */}
+          {/* Configuración de Tipo de Anunciante, Bio y TELÉFONO */}
           <div className="bg-white rounded-2xl md:rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-200">
             <h3 className="text-xl font-bold text-slate-900 mb-2">Perfil de Anunciante</h3>
-            <p className="text-slate-600 text-sm mb-6">Elegí si publicás como Dueño Directo o Inmobiliaria/Empresa para habilitar tu perfil público.</p>
+            <p className="text-slate-600 text-sm mb-6">Elegí si publicás como Dueño Directo o Inmobiliaria/Empresa y actualizá tus datos de contacto.</p>
             
             <form onSubmit={handleUpdateAccountType} className="space-y-6 max-w-xl">
+              
+              {/* INPUT PARA TELÉFONO (Visible para ambos tipos de cuenta) */}
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Teléfono / WhatsApp de contacto</label>
+                <input 
+                  type="text" 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)} 
+                  placeholder="Ej: 2214567890" 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 font-medium text-sm md:text-base"
+                />
+                <p className="text-xs text-slate-500 mt-1">Este número será el que utilicen los inquilinos para contactarte en tus propiedades.</p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className={`border rounded-2xl p-4 cursor-pointer flex items-center gap-3 transition-all ${accountType === 'particular' ? 'border-blue-600 bg-blue-50/50 shadow-sm' : 'border-slate-200'}`}>
                   <input type="radio" name="accountType" value="particular" checked={accountType === 'particular'} onChange={() => setAccountType('particular')} className="text-blue-600" />
@@ -357,7 +374,7 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <button type="submit" disabled={savingProfile} className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all shadow-md">
+              <button type="submit" disabled={savingProfile} className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl text-sm transition-all shadow-md cursor-pointer">
                 {savingProfile ? 'Guardando...' : 'Guardar cambios de perfil'}
               </button>
             </form>
@@ -407,10 +424,10 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <button type="submit" disabled={verifying} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all text-sm md:text-base">
+              <button type="submit" disabled={verifying} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all text-sm md:text-base cursor-pointer">
                 {verifying ? 'Enviando documentación...' : 'Enviar para revisión'}
               </button>
-              <button type="button" onClick={() => setShowVerifyModal(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition-colors text-sm md:text-base">Cancelar</button>
+              <button type="button" onClick={() => setShowVerifyModal(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition-colors text-sm md:text-base cursor-pointer">Cancelar</button>
             </form>
           </div>
         </div>
