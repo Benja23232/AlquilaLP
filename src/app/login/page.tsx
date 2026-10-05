@@ -15,7 +15,6 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [errorMsg, setErrorMsg] = useState(""); 
-  const [successMsg, setSuccessMsg] = useState(""); // NUEVO: Estado para mensajes de éxito
   
   const [formData, setFormData] = useState({
     email: '',
@@ -32,7 +31,6 @@ function LoginContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
-    setSuccessMsg("");
 
     if (!formData.email.trim() || !formData.password.trim()) {
       setErrorMsg("El correo electrónico y la contraseña son obligatorios.");
@@ -73,24 +71,19 @@ function LoginContent() {
           });
         }
 
-        // NUEVO: Mensaje claro en la pantalla en lugar de un alert
-        setSuccessMsg("¡Registro exitoso! Te enviamos un link de confirmación a tu correo. Por favor revisá tu bandeja de entrada (o SPAM) para activar tu cuenta.");
-        setIsSignUp(false);
-        setFormData(prev => ({ ...prev, password: '' })); 
+        // AL NO HABER CONFIRMACIÓN DE MAIL, YA ESTÁ LOGUEADO.
+        // Lo mandamos derecho adentro del sistema.
+        window.location.href = redirectTo;
+        
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
 
-        if (signInError) {
-          // Si el error es por mail no confirmado, se lo decimos clarito
-          if (signInError.message.includes("Email not confirmed")) {
-            throw new Error("Tenés que confirmar tu correo antes de ingresar. Revisá tu bandeja de entrada o la carpeta de SPAM.");
-          }
-          throw signInError;
-        }
+        if (signInError) throw signInError;
 
+        // Login normal exitoso
         window.location.href = redirectTo;
       }
     } catch (error: any) {
@@ -133,7 +126,6 @@ function LoginContent() {
                 onClick={() => {
                   setIsSignUp(false);
                   setErrorMsg("");
-                  setSuccessMsg("");
                 }}
                 className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${!isSignUp ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
               >
@@ -144,7 +136,6 @@ function LoginContent() {
                 onClick={() => {
                   setIsSignUp(true);
                   setErrorMsg("");
-                  setSuccessMsg("");
                 }}
                 className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${isSignUp ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
               >
@@ -152,17 +143,9 @@ function LoginContent() {
               </button>
             </div>
 
-            {/* CARTEL DE ERROR */}
             {errorMsg && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium animate-pulse text-center">
                 {errorMsg}
-              </div>
-            )}
-
-            {/* CARTEL DE ÉXITO AL REGISTRARSE */}
-            {successMsg && (
-              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-4 rounded-xl text-sm font-medium text-center shadow-sm">
-                ✅ {successMsg}
               </div>
             )}
 
@@ -235,7 +218,6 @@ function LoginContent() {
                 onClick={() => {
                   setIsSignUp(!isSignUp);
                   setErrorMsg("");
-                  setSuccessMsg("");
                 }}
                 className="text-xs sm:text-sm font-semibold text-blue-600 hover:underline"
               >
