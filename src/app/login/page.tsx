@@ -10,13 +10,12 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // ACÁ ESTÁ LA LÓGICA DINÁMICA: 
-  // Lee de la URL de dónde venía el usuario. Si entró directo al login sin redirección, por defecto va al /dashboard.
   const redirectTo = searchParams.get('redirectTo') || '/dashboard';
 
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [errorMsg, setErrorMsg] = useState(""); 
+  const [successMsg, setSuccessMsg] = useState(""); // NUEVO: Estado para mensajes de éxito
   
   const [formData, setFormData] = useState({
     email: '',
@@ -33,6 +32,7 @@ function LoginContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
+    setSuccessMsg("");
 
     if (!formData.email.trim() || !formData.password.trim()) {
       setErrorMsg("El correo electrónico y la contraseña son obligatorios.");
@@ -73,7 +73,8 @@ function LoginContent() {
           });
         }
 
-        alert("¡Cuenta creada con éxito! Ya podés iniciar sesión o comenzar a publicar.");
+        // NUEVO: Mensaje claro en la pantalla en lugar de un alert
+        setSuccessMsg("¡Registro exitoso! Te enviamos un link de confirmación a tu correo. Por favor revisá tu bandeja de entrada (o SPAM) para activar tu cuenta.");
         setIsSignUp(false);
         setFormData(prev => ({ ...prev, password: '' })); 
       } else {
@@ -82,10 +83,14 @@ function LoginContent() {
           password: formData.password,
         });
 
-        if (signInError) throw signInError;
+        if (signInError) {
+          // Si el error es por mail no confirmado, se lo decimos clarito
+          if (signInError.message.includes("Email not confirmed")) {
+            throw new Error("Tenés que confirmar tu correo antes de ingresar. Revisá tu bandeja de entrada o la carpeta de SPAM.");
+          }
+          throw signInError;
+        }
 
-        // LA SOLUCIÓN DEFINITIVA: Forzamos una recarga limpia del navegador.
-        // Esto asegura que el layout del admin o dashboard lea la sesión correcta.
         window.location.href = redirectTo;
       }
     } catch (error: any) {
@@ -128,6 +133,7 @@ function LoginContent() {
                 onClick={() => {
                   setIsSignUp(false);
                   setErrorMsg("");
+                  setSuccessMsg("");
                 }}
                 className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${!isSignUp ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
               >
@@ -138,6 +144,7 @@ function LoginContent() {
                 onClick={() => {
                   setIsSignUp(true);
                   setErrorMsg("");
+                  setSuccessMsg("");
                 }}
                 className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${isSignUp ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
               >
@@ -145,9 +152,17 @@ function LoginContent() {
               </button>
             </div>
 
+            {/* CARTEL DE ERROR */}
             {errorMsg && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium animate-pulse">
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium animate-pulse text-center">
                 {errorMsg}
+              </div>
+            )}
+
+            {/* CARTEL DE ÉXITO AL REGISTRARSE */}
+            {successMsg && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-4 rounded-xl text-sm font-medium text-center shadow-sm">
+                ✅ {successMsg}
               </div>
             )}
 
@@ -220,6 +235,7 @@ function LoginContent() {
                 onClick={() => {
                   setIsSignUp(!isSignUp);
                   setErrorMsg("");
+                  setSuccessMsg("");
                 }}
                 className="text-xs sm:text-sm font-semibold text-blue-600 hover:underline"
               >
@@ -235,7 +251,6 @@ function LoginContent() {
   );
 }
 
-// 3. Exportamos el componente envuelto en Suspense
 export default function LoginPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
